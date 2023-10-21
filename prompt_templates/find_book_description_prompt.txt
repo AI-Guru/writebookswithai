@@ -1,0 +1,7 @@
+Here is the short description of the book:
+
+"""
+{}
+"""
+
+Please suggest 5 different and appealing names for the book.

@@ -1,0 +1,9 @@
+Here is the title of the book that you are writing: "{}"
+
+Here is the short summary of the book: 
+
+"""
+{}
+"""
+
+Please write the table of contents for the book. Just reply with the chapter titles, one per line. Use chapter numbers.

@@ -1,0 +1,21 @@
+Please write a chapter summary.
+
+The book title is:
+
+"""
+{}
+"""
+
+The book description is:
+
+"""
+{}
+"""
+
+The chapter title is:
+
+"""
+{}
+"""
+
+Write the chapter summary in a way that will make it very easy to extend the summary to a full chapter. Only reply with the summary. Start with the chapter title.

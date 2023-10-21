@@ -1,0 +1,9 @@
+You are writing a book with the title {}. 
+
+You are now writing the next chapter. The chapter summary is:
+
+"""
+{}
+"""
+
+Please write an outline of this chapter. An outline is a list of the main points of the chapter. Such as arguments or pieces of information that you want to include in the chapter. Please write a bulleted list. Respond only with the bulleted list.

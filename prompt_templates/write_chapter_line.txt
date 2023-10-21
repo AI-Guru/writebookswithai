@@ -1,0 +1,6 @@
+In the following you can use the same structure as the previous paragraph, but you can also use a different structure if you want to. Only write the chapter title once at the beginning. Do not repear the short argument/fact text. 
+
+Expand the following argument/fact into a couple of paragraphs:
+"""
+{}
+"""

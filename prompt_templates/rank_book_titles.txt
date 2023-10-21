@@ -1,0 +1,1 @@
+Now please have a closer look at the book titles. Come up with a measure of how appealing they are and how well they represent the book description. Then rank order them. Best title first. Please only respond with a numbered list of titles. Avoid further text.

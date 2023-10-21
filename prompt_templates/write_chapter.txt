@@ -1,0 +1,13 @@
+You will now write a chapter one outline element at a time. Each element is either an argument or a fact.
+
+Here is the summary of the chapter:
+"""
+{}
+"""
+
+Outline elements: 
+"""
+{}
+"""
+
+So far you have not written anything.
