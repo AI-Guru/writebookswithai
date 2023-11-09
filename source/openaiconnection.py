@@ -6,7 +6,7 @@ from source.tokencounter import num_tokens_from_messages
 
 class OpenAIConnection:
 
-    def __init__(self):
+    def __init__(self, logger):
         # Raise an exception if the OpenAI API key is not set.
         # Else set the API key.
         api_key = os.getenv("OPENAI_API_KEY")
@@ -14,7 +14,9 @@ class OpenAIConnection:
             raise ValueError("OPENAI_API_KEY environment variable is not set.")
         openai.api_key = api_key
 
-        # Starting 11.12.2023 identical to gpt-3.5-turbo
+        self.logger = logger
+
+        # For 3.5 use only the 16k model.
         self.chatbot_model_long = "gpt-3.5-turbo-16k"
         self.chatbot_contextmax_long = 16_384
 
@@ -70,6 +72,9 @@ class OpenAIConnection:
 
         if verbose:
             self.print_messages([response])
+
+        if self.logger.is_logging():
+            self.logger.write_messages(messages, tokens_messages)
 
         return response
 

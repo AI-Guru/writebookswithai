@@ -1,4 +1,5 @@
 import os
+import sys
 import fire
 import dotenv
 import traceback
@@ -7,6 +8,7 @@ import datetime
 
 from source.openaiconnection import OpenAIConnection
 from source.chain import ChainExecutor
+from source.writelogs import WriteLogs
 from source.bookchainelements import (
     FindBookTitle,
     WriteTableOfContents,
@@ -22,7 +24,7 @@ dotenv.load_dotenv()
 class ExitException(Exception):
     pass
 
-def writebook(book_path):
+def writebook(book_path, log=False, log_persistent=False):
 
     # See if the book path exists. If not, raise an error.
     if not os.path.exists(book_path):
@@ -33,8 +35,11 @@ def writebook(book_path):
     if not os.path.exists(description_path):
         raise ExitException(f"File {description_path} does not exist. Please create it. It should contain a short description of the book.")
 
+    # Create the logger
+    logger = WriteLogs(book_path, log=log, log_persistent=log_persistent)
+
     # Create the model connection.    
-    model_connection = OpenAIConnection()
+    model_connection = OpenAIConnection(logger)
 
     # Start time.
     start_time = time.time()
@@ -66,7 +71,14 @@ def writebook(book_path):
 
 if __name__ == "__main__":
     try:
-        fire.Fire(writebook)
+        args = sys.argv[1:]
+        for i, arg in enumerate(args):
+            if arg == '--l':
+                args[i] = '--log=True'
+            elif arg == '--lp':
+                args[i] = '--log_persistent=True'
+        print(args)
+        fire.Fire(writebook, command=args)
     except ExitException as e:
         print(e)
     except:

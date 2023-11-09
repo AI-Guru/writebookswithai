@@ -67,7 +67,7 @@ class WriteChapterSummaries(BaseBookChainElement):
 
                 prompt = PromptTemplate.get("write_chapter_summary").format(book_title, description, chapter_title)
                 self.messages += [{"role": "user", "content": prompt}]
-                response_message = llm_connection.chat(self.messages)
+                response_message = llm_connection.chat(self.messages, version4=False)
                 self.messages = self.messages[:-1]
 
                 # Write to a file.

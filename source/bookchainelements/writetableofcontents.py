@@ -53,7 +53,7 @@ class WriteTableOfContents(BaseBookChainElement):
             print(prompt)
 
             self.messages += [{"role": "user", "content": prompt}]
-            response_message = llm_connection.chat(self.messages)
+            response_message = llm_connection.chat(self.messages, version4=False)
             self.messages += [response_message]
             self.current_step = WriteTableOfContentsSteps.review_toc_draft
 
@@ -61,7 +61,7 @@ class WriteTableOfContents(BaseBookChainElement):
         elif current_step is WriteTableOfContentsSteps.review_toc_draft:
             prompt = PromptTemplate.get("write_toc_review_draft")
             self.messages += [{"role": "user", "content": prompt}]
-            response_message = llm_connection.chat(self.messages)
+            response_message = llm_connection.chat(self.messages, version4=False)
             self.messages += [response_message]
 
             # Write the book titles to a file.

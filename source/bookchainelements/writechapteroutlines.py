@@ -62,7 +62,7 @@ class WriteChapterOutlines(BaseBookChainElement):
 
                 # Send the prompt.
                 self.messages += [{"role": "user", "content": prompt}]
-                response_message = llm_connection.chat(self.messages)
+                response_message = llm_connection.chat(self.messages, version4=False)
 
                 # Write to a file.
                 chapter_outline = response_message["content"]
