@@ -53,7 +53,7 @@ class FindBookTitle(BaseBookChainElement):
                 description = f.read()
             prompt = PromptTemplate.get("find_book_description_prompt").format(description)
             self.messages += [{"role": "user", "content": prompt}]
-            response_message = llm_connection.chat(self.messages)
+            response_message = llm_connection.chat(self.messages, version4=False)
             self.messages += [response_message]
             self.current_step = FindBookTitleSteps.rank_book_titles
 
@@ -61,7 +61,7 @@ class FindBookTitle(BaseBookChainElement):
         elif current_step is FindBookTitleSteps.rank_book_titles:
             prompt = PromptTemplate.get("rank_book_titles")
             self.messages += [{"role": "user", "content": prompt}]
-            response_message = llm_connection.chat(self.messages)
+            response_message = llm_connection.chat(self.messages, version4=False)
             self.messages += [response_message]
 
             # Write the book titles to a file.
