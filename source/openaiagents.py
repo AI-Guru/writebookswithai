@@ -16,7 +16,11 @@ class OpenAIAgents():
         self.book_path = book_path
         self.file_path = os.path.join(self.book_path, self.JSON_FILE_NAME)
 
-        self.client = OpenAI()
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key is None:
+            raise ValueError("OPENAI_API_KEY environment variable is not set.")
+
+        self.client = OpenAI(api_key=api_key)
         self.assistants = {}
 
     def load_assistants_json(self):

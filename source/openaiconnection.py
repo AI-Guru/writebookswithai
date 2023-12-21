@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 from retry import retry
 from source.tokencounter import num_tokens_from_messages
 
@@ -12,9 +12,10 @@ class OpenAIConnection:
         api_key = os.getenv("OPENAI_API_KEY")
         if api_key is None:
             raise ValueError("OPENAI_API_KEY environment variable is not set.")
-        openai.api_key = api_key
 
         self.logger = logger
+
+        self.client = OpenAI(api_key=api_key)
 
         # For 3.5 use only the 16k model.
         self.chatbot_model_long = "gpt-3.5-turbo-16k"
@@ -32,7 +33,7 @@ class OpenAIConnection:
         assert isinstance(texts, list)
         assert all(isinstance(text, str) for text in texts)
 
-        response = openai.Embedding.create(
+        response = self.client.embeddings.create(
             input=texts,
             model="text-embedding-ada-002",
 
@@ -51,7 +52,7 @@ class OpenAIConnection:
             model = self.chatbot_model_4 if not long else self.chatbot_model_4_long
             max_tokens = self.chatbot_contextmax_4 if not long else self.chatbot_contextmax_4_long
         else:
-            # gpt-3.5-turbo will point to gpt-3.5-turbo-16k starting 11.12.2023. Pricing will be the same.
+            # gpt-3.5-turbo will point to gpt-3.5-turbo-16k starting 11.12.2023.
             # No distinction needed
             model = self.chatbot_model_long
             max_tokens = self.chatbot_contextmax_long
@@ -60,15 +61,16 @@ class OpenAIConnection:
         print(f"tokens for message: {tokens_messages}")
         max_tokens = max_tokens - tokens_messages
 
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model=model,
             max_tokens=max_tokens,
             messages=messages
         )
 
-        self.token_count += response["usage"]["total_tokens"]
+        self.token_count += response.usage.total_tokens
 
-        response = response["choices"][0]["message"]
+        response = {"role": response.choices[0].message.role,
+                    "content": response.choices[0].message.content}
 
         if verbose:
             self.print_messages([response])
