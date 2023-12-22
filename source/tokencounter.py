@@ -1,3 +1,4 @@
+""" Functions for counting the number of tokens in a message or a list of messages."""
 import tiktoken
 
 
@@ -39,7 +40,9 @@ def num_tokens_from_messages(messages, model: str) -> int:
         return num_tokens_from_messages(messages, model="gpt-4-0613")
     else:
         raise NotImplementedError(
-            f"""num_tokens_from_messages() is not implemented for model {model}. See https://github.com/openai/openai-python/blob/main/chatml.md for information on how messages are converted to tokens."""
+            f"""num_tokens_from_messages() is not implemented for model {model}.
+            See https://github.com/openai/openai-python/blob/main/chatml.md
+            for information on how messages are converted to tokens."""
         )
 
     num_tokens = 0
