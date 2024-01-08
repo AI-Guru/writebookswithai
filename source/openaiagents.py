@@ -2,7 +2,10 @@
 
 import os
 import json
+from retry import retry
 from openai import OpenAI
+
+from .tokencounter import TokenCounter
 
 
 class OpenAIAgents():
@@ -11,7 +14,7 @@ class OpenAIAgents():
     JSON_FILE_NAME = 'assistants.json'
     ASSISTANT_PREFIX = "AIB_"
 
-    def __init__(self, book_path):
+    def __init__(self, logger, book_path):
 
         self.book_path = book_path
         self.file_path = os.path.join(self.book_path, self.JSON_FILE_NAME)
@@ -21,6 +24,9 @@ class OpenAIAgents():
             raise ValueError("OPENAI_API_KEY environment variable is not set.")
 
         self.client = OpenAI(api_key=api_key)
+
+        self.TokenCounter = TokenCounter()
+        self.token_count = 0
         self.assistants = {}
 
     def load_assistants_json(self):
@@ -218,10 +224,66 @@ class OpenAIAgents():
         return assistant.instructions
 
     def create_thread(self):
-        pass
+        """ Create a new threat on OpenAI.
 
-    def create_message(self):
-        pass
+        Returns:
+            Thread Object: Thread object
+        """
+        return self.client.beta.threads.create()
 
-    def create_run(self):
-        pass
+    def create_first_message_in_thread(self, message):
+        """ Create a new message with a new thread
+
+        Args:
+            message (String): The content of the message
+
+        Returns:
+            ThreadMessage: ThreadMessage Object
+        """
+        return self.attach_message(self.create_thread(), message)
+
+    def attach_message(self, thread, message):
+        role = "user"  # As of beta, only user is supported
+
+        return self.client.beta.threads.messages.create(
+            thread_id=thread.id,
+            role=role,
+            content=message
+        )
+
+    def create_run(self, assistant, message):
+
+
+        # Currently, OpenAI does not provide a way to retrieve the number of tokens used by assistants
+        # Instead, we will count the tokens in the message TO the agent via the TikTokCounter
+        self.token_count += self.TokenCounter.num_tokens_from_messages(messages=message.content,
+                                                                       model=assistant.model)
+        
+        return self.client.beta.threads.runs.create(
+                                        thread_id=message.thread_id,
+                                        assistant_id=assistant.id,
+                                        )
+        
+    def retrieve_run(self, run_id, thread_id):
+        
+        return self.client.beta.threads.runs.retrieve(
+                                        thread_id=thread_id,
+                                        run_id=run_id,
+                                        )
+    
+    @retry(tries=5, delay=15)
+    def retrieve_answer(self, run):
+        
+        assert run.state == "completed"
+        
+        return self.client.beta.threads.messages.list(
+                                        thread_id=run.thread_id
+                                        )
+
+    def get_token_count(self):
+        """ Return the total number of tokens used by the assistants.
+
+        Returns:
+            int: Number of tokens used
+        """
+        return self.token_count
