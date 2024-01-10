@@ -1,7 +1,7 @@
 import os
 from openai import OpenAI
 from retry import retry
-from .tokencounter import TokenCounter
+from source.tokencounter import TokenCounter
 
 
 

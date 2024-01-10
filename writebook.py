@@ -7,7 +7,6 @@ import time
 import datetime
 
 from source.openaiconnection import OpenAIConnection
-from source.openaiagents import OpenAIAgents
 from source.chain import ChainExecutor
 from source.writelogs import WriteLogs
 from source.bookchainelements import (
@@ -19,13 +18,18 @@ from source.bookchainelements import (
     JoinBook
 )
 
+from source.oaa import (
+    OAAControl,
+    CreatePlot
+)
+
 # Load the environment variables.
 dotenv.load_dotenv()
 
 class ExitException(Exception):
     pass
 
-def writebook(book_path, log=False, log_persistent=False, assistant=False):
+def writebook(book_path, log=False, log_persistent=False, assistant=False, model="gpt-4"):
 
     # See if the book path exists. If not, raise an error.
     if not os.path.exists(book_path):
@@ -55,11 +59,11 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False):
         chain_executor.add_element(WriteChapters(book_path))
         chain_executor.add_element(JoinBook(book_path))
     else:
-        # Create the connection    
-        model_connection = OpenAIAgents(logger, book_path)
-        
-        chain_executor = ChainExecutor(model_connection)
-        #chain_executor.add_element(CreateMainPlot)
+        # Create the connection and load history
+        processmanager = OAAControl(book_path, logger, model)
+
+        chain_executor = ChainExecutor(processmanager)
+        chain_executor.add_element(CreatePlot(book_path))
 
 
     # Run the chain.
@@ -88,6 +92,10 @@ if __name__ == "__main__":
                 args[i] = '--log_persistent=True'
             elif arg == "--a":
                 args[i] = "--assistant=True"
+            elif (arg == "--m 4" or arg == "--m gpt4"):
+                args[i] = "--model=gpt-4"
+            elif (arg == "--m 3" or arg == "--m gpt3"):
+                args[i] = "--model=gpt-3"
         print(args)
         fire.Fire(writebook, command=args)
     except ExitException as e:

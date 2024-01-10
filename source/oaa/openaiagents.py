@@ -5,7 +5,22 @@ import json
 from retry import retry
 from openai import OpenAI
 
-from .tokencounter import TokenCounter
+from source.tokencounter import TokenCounter
+
+class AssistantNotFound(Exception):
+    """ Exception raised when an assistant is not found on OpenAI.
+    """
+    def __init__(self, assistant_id, message="Assistant not found"):
+        self.assistant_id = assistant_id
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f'{self.message}: {self.assistant_id}'
+
+
+
+
 
 
 class OpenAIAgents():
@@ -14,10 +29,9 @@ class OpenAIAgents():
     JSON_FILE_NAME = 'assistants.json'
     ASSISTANT_PREFIX = "AIB_"
 
-    def __init__(self, logger, book_path):
+    def __init__(self, book_path):
 
-        self.book_path = book_path
-        self.file_path = os.path.join(self.book_path, self.JSON_FILE_NAME)
+        self.file_path = os.path.join(book_path, self.JSON_FILE_NAME)
 
         api_key = os.getenv("OPENAI_API_KEY")
         if api_key is None:
@@ -25,46 +39,49 @@ class OpenAIAgents():
 
         self.client = OpenAI(api_key=api_key)
 
-        self.TokenCounter = TokenCounter()
+        self.token_counter = TokenCounter()
         self.token_count = 0
-        self.assistants = {}
+        self.assistants_dict = {}
+        self.has_history = False
 
-    def load_assistants_json(self):
-        """ Load the assistants' details from the json file within the book directory. """
+    # def load_assistants_json(self):
+    #     """ Load the assistants' details from the json file within the book directory. """
 
-        json_dict = {}
-        updated_id = False
+    #     json_dict = {}
+    #     updated_id = False
 
-        try:
-            with open(self.file_path, 'r', encoding='utf-8') as f:
-                json_dict = json.load(f)
-        except FileNotFoundError:
-            json_dict = {}
-            print('No assistant json file found')
+    #     try:
+    #         with open(self.file_path, 'r', encoding='utf-8') as f:
+    #             json_dict = json.load(f)
+    #     except FileNotFoundError:
+    #         json_dict = {}
+    #         self.has_history = False
 
-        # Fetch list of assistants from OpenAI (max 100!)
-        # TODO: Add pagination
-        assistants = self.client.beta.assistants.list(limit=100)
-        agents_id_online = [agent.id for agent in assistants.data]
+    #     # Fetch list of assistants from OpenAI (max 100!)
+    #     # TODO: Add pagination
+    #     assistants = self.client.beta.assistants.list(limit=100)
+    #     agents_id_online = [agent.id for agent in assistants.data]
 
-        for key in json_dict.keys():
-            if key not in agents_id_online:
-                assistant = self.register_assistant(
-                    json_dict[key]["name"],
-                    json_dict[key]["instructions"],
-                    json_dict[key]["model"]
-                )
-                updated_id = True
-            else:
-                assistant = self.client.beta.assistants.retrieve(key)
+    #     for key in json_dict.keys():
+    #         if key not in agents_id_online:
+    #             assistant = self.register_existing_assistant(
+    #                 json_dict[key]["name"],
+    #                 json_dict[key]["instructions"],
+    #                 json_dict[key]["model"]
+    #             )
+    #             updated_id = True
+    #         else:
+    #             assistant = self.client.beta.assistants.retrieve(key)
 
-            self.assistants[assistant.id] = {"object": assistant,
-                                             "name": assistant.name,
-                                             }
+    #         self.assistants_dict[assistant.id] = {"object": assistant,
+    #                                          "name": assistant.name,
+    #                                          }
 
-        if updated_id:
-            # If new assistants were created, update the json file
-            self.write_assistants_json()
+    #     if updated_id:
+    #         # If new assistants were created, update the json file
+    #         self.write_assistants_json()
+            
+    #     self.has_history = True
 
     def write_assistants_json(self):
         """ Write the assistants' details to a json file within the book directory.
@@ -75,7 +92,7 @@ class OpenAIAgents():
 
         json_dict = {}
 
-        for assistant_id, assistant in self.assistants.items():
+        for assistant_id, assistant in self.assistants_dict.items():
             json_dict[assistant_id] = {
                 "name": assistant.name,
                 "instructions": assistant.instructions,
@@ -88,52 +105,75 @@ class OpenAIAgents():
         except:
             raise Exception('Could not write assistants json file')
 
-    def create_assistant(self, name, instructions, model):
-        """ Create an assistant on OpenAI and save it's details to the json file.
+    def create_new_assistant(self, name, instructions, model):
+        """ Create an assistant on OpenAI.
 
         Args:
             name (String): Name of the assistant
             instructions (String): Instructions for the assistant
             model (String): Model to use for the assistant
         """
-        assistant = self.register_assistant(name, instructions, model)
-
-        self.assistants[assistant.id] = {"object": assistant,
-                                         "name": assistant.name,
-                                         }
-        self.write_assistants_json()
-
-    def register_assistant(self, name, instructions, model):
-        """ Register an assistant on OpenAI.
-
-        Args:
-            name (String): Name of the assistant
-            instructions (String): The assistant's role and instructions
-            model (String): The GPT model to use for the assistant
-
-        Returns:
-            Assistant: OpenAI Assistant object
-        """
-
-        if name[:len(self.ASSISTANT_PREFIX)] != self.ASSISTANT_PREFIX:
-            name = self.ASSISTANT_PREFIX + name
-
+        
         assistant = self.client.beta.assistants.create(
-            name=self.ASSISTANT_PREFIX + name,
+            name=name,
             instructions=instructions,
             model=model
         )
 
-        self.assistants[assistant.id] = {"object": assistant,
+        self.assistants_dict[assistant.id] = {"object": assistant,
+                                         "name": assistant.name,
+                                         }
+        
+    def retrieve_assistant(self, assistant_id):
+        """ Retrieve an assistant from OpenAI.
+
+        Args:
+            assistant_id (String): ID of the assistant
+
+        Returns:
+            Assistant: OpenAI Assistant object
+        """
+        
+        assistant = self.client.beta.assistants.retrieve(assistant_id)
+        
+        if not assistant:
+            raise AssistantNotFound(assistant_id)
+        
+        self.assistants_dict[assistant.id] = {"object": assistant,
                                          "name": assistant.name,
                                          }
 
-        return assistant
+
+    # def register_existing_assistant(self, name, instructions, model):
+    #     """ Register an assistant on OpenAI. Assistant was already saved to the json file.
+
+    #     Args:
+    #         name (String): Name of the assistant
+    #         instructions (String): The assistant's role and instructions
+    #         model (String): The GPT model to use for the assistant
+
+    #     Returns:
+    #         Assistant: OpenAI Assistant object
+    #     """
+
+
+
+    #     assistant = self.client.beta.assistants.create(
+    #         name=name,
+    #         instructions=instructions,
+    #         model=model
+    #     )
+
+    #     self.assistants_dict[assistant.id] = {"object": assistant,
+    #                                      "name": assistant.name,
+    #                                      }
+
+    #     return assistant
 
     def flush_assistants(self):
         """ Delete all assistants from OpenAI. """
 
-        for assistant_id in self.assistants:
+        for assistant_id in self.assistants_dict:
             self.delete_assistant(assistant_id)
 
         os.remove(self.file_path)
@@ -145,7 +185,7 @@ class OpenAIAgents():
             assistant_id (String): ID of Assistant to delete
         """
         self.client.beta.assistants.delete(assistant_id)
-        self.assistants.pop(assistant_id, None)
+        self.assistants_dict.pop(assistant_id, None)
         self.write_assistants_json()
 
     def assistant_exists(self, name):
@@ -157,7 +197,7 @@ class OpenAIAgents():
         Returns:
             Boolean: True if assistant exists, False otherwise
         """
-        for items in self.assistants.values():
+        for items in self.assistants_dict.values():
             if items['name'] == name:
                 return True
 
@@ -173,7 +213,7 @@ class OpenAIAgents():
             Assistant | None: OpenAI Assistant object or None if not found
         """
 
-        for items in self.assistants.values():
+        for items in self.assistants_dict.values():
             if items['name'] == name:
                 return items['object']
 
@@ -256,7 +296,7 @@ class OpenAIAgents():
 
         # Currently, OpenAI does not provide a way to retrieve the number of tokens used by assistants
         # Instead, we will count the tokens in the message TO the agent via the TikTokCounter
-        self.token_count += self.TokenCounter.num_tokens_from_messages(messages=message.content,
+        self.token_count += self.token_counter.num_tokens_from_messages(messages=message.content,
                                                                        model=assistant.model)
         
         return self.client.beta.threads.runs.create(
