@@ -1,7 +1,8 @@
 import os
 from openai import OpenAI
 from retry import retry
-from source.tokencounter import num_tokens_from_messages
+from .tokencounter import TokenCounter
+
 
 
 class OpenAIConnection:
@@ -25,7 +26,8 @@ class OpenAIConnection:
         self.chatbot_model_4_long = "gpt-4-32k"
         self.chatbot_contextmax_4 = 8_192
         self.chatbot_contextmax_4_long = 32_768
-
+        
+        self.TokenCounter = TokenCounter()
         self.token_count = 0
 
     @retry(tries=5, delay=5)
@@ -57,7 +59,7 @@ class OpenAIConnection:
             model = self.chatbot_model_long
             max_tokens = self.chatbot_contextmax_long
 
-        tokens_messages = num_tokens_from_messages(messages, model)
+        tokens_messages = self.TokenCounter.num_tokens_from_messages(messages, model)
         print(f"tokens for message: {tokens_messages}")
         max_tokens = max_tokens - tokens_messages
 
@@ -88,3 +90,6 @@ class OpenAIConnection:
             print(f"{message['content']}")
             print("")
             print("\033[0m", end="")
+    
+    def get_token_count(self):
+        return self.token_count

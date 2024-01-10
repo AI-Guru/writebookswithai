@@ -7,6 +7,7 @@ import time
 import datetime
 
 from source.openaiconnection import OpenAIConnection
+from source.openaiagents import OpenAIAgents
 from source.chain import ChainExecutor
 from source.writelogs import WriteLogs
 from source.bookchainelements import (
@@ -24,7 +25,7 @@ dotenv.load_dotenv()
 class ExitException(Exception):
     pass
 
-def writebook(book_path, log=False, log_persistent=False):
+def writebook(book_path, log=False, log_persistent=False, assistant=False):
 
     # See if the book path exists. If not, raise an error.
     if not os.path.exists(book_path):
@@ -38,20 +39,28 @@ def writebook(book_path, log=False, log_persistent=False):
     # Create the logger
     logger = WriteLogs(book_path, log=log, log_persistent=log_persistent)
 
-    # Create the model connection.    
-    model_connection = OpenAIConnection(logger)
-
     # Start time.
     start_time = time.time()
 
     # Create a chain executor.
-    chain_executor = ChainExecutor(model_connection)
-    chain_executor.add_element(FindBookTitle(book_path))
-    chain_executor.add_element(WriteTableOfContents(book_path))
-    chain_executor.add_element(WriteChapterSummaries(book_path))
-    chain_executor.add_element(WriteChapterOutlines(book_path))
-    chain_executor.add_element(WriteChapters(book_path))
-    chain_executor.add_element(JoinBook(book_path))
+    if not assistant:
+        # Create the model connection.    
+        model_connection = OpenAIConnection(logger)
+    
+        chain_executor = ChainExecutor(model_connection)
+        chain_executor.add_element(FindBookTitle(book_path))
+        chain_executor.add_element(WriteTableOfContents(book_path))
+        chain_executor.add_element(WriteChapterSummaries(book_path))
+        chain_executor.add_element(WriteChapterOutlines(book_path))
+        chain_executor.add_element(WriteChapters(book_path))
+        chain_executor.add_element(JoinBook(book_path))
+    else:
+        # Create the connection    
+        model_connection = OpenAIAgents(logger, book_path)
+        
+        chain_executor = ChainExecutor(model_connection)
+        #chain_executor.add_element(CreateMainPlot)
+
 
     # Run the chain.
     chain_executor.run()
@@ -62,7 +71,7 @@ def writebook(book_path, log=False, log_persistent=False):
     # Print the total number of tokens used.
     summary_file_path = os.path.join(book_path, "output", "summary.txt")
     with open(summary_file_path, "w") as summary_file:
-        total_tokens_used = model_connection.token_count
+        total_tokens_used = model_connection.get_token_count()
         print(f"Total tokens used: {total_tokens_used}", file=summary_file)
 
         elapsed_time_string = str(datetime.timedelta(seconds=elapsed_time))
@@ -77,6 +86,8 @@ if __name__ == "__main__":
                 args[i] = '--log=True'
             elif arg == '--lp':
                 args[i] = '--log_persistent=True'
+            elif arg == "--a":
+                args[i] = "--assistant=True"
         print(args)
         fire.Fire(writebook, command=args)
     except ExitException as e:
