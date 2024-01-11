@@ -1,3 +1,4 @@
+
 from source.oaa.oaabasebookchainelement import OAABaseBookChainElement
 
 class CreatePlot(OAABaseBookChainElement):
@@ -12,7 +13,11 @@ class CreatePlot(OAABaseBookChainElement):
         return self.done
 
 
-    def step(self, processmanager):
+    def step(self, oaacontrol):
+        
+        oaacontrol.query_assistant("BAI_Writer", 
+                                   "Create the plotline for a science fiction novel.")
+        
         
 
         self.done = True

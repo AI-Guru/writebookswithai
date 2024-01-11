@@ -29,7 +29,7 @@ dotenv.load_dotenv()
 class ExitException(Exception):
     pass
 
-def writebook(book_path, log=False, log_persistent=False, assistant=False, model="gpt-4"):
+def writebook(book_path, log=False, log_persistent=False, assistant=False, model="gpt-3.5-turbo"):
 
     # See if the book path exists. If not, raise an error.
     if not os.path.exists(book_path):
@@ -60,9 +60,9 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False, model
         chain_executor.add_element(JoinBook(book_path))
     else:
         # Create the connection and load history
-        processmanager = OAAControl(book_path, logger, model)
+        model_connection = OAAControl(book_path, logger, model)
 
-        chain_executor = ChainExecutor(processmanager)
+        chain_executor = ChainExecutor(model_connection)
         chain_executor.add_element(CreatePlot(book_path))
 
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             elif (arg == "--m 4" or arg == "--m gpt4"):
                 args[i] = "--model=gpt-4"
             elif (arg == "--m 3" or arg == "--m gpt3"):
-                args[i] = "--model=gpt-3"
+                args[i] = "--model=gpt-3.5-turbo"
         print(args)
         fire.Fire(writebook, command=args)
     except ExitException as e:
