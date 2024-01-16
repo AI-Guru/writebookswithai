@@ -48,19 +48,25 @@ class OpenAIConnection:
     def chat(self, messages, long=False, verbose=True, version4=False):
 
         if verbose:
+            print('----------MESSAGE-----------')
             self.print_messages(messages)
+            print('----------END MESSAGE-----------')
+            
+
 
         if version4:
             model = self.chatbot_model_4 if not long else self.chatbot_model_4_long
             max_tokens = self.chatbot_contextmax_4 if not long else self.chatbot_contextmax_4_long
         else:
-            # gpt-3.5-turbo will point to gpt-3.5-turbo-16k starting 11.12.2023.
-            # No distinction needed
             model = self.chatbot_model_long
             max_tokens = self.chatbot_contextmax_long
 
         tokens_messages = self.TokenCounter.num_tokens_from_messages(messages, model)
         print(f"tokens for message: {tokens_messages}")
+
+        if self.logger.is_logging():
+            self.logger.write_messages(messages, tokens_messages, appendix="message")
+
         max_tokens = max_tokens - tokens_messages
 
         response = self.client.chat.completions.create(
@@ -75,10 +81,12 @@ class OpenAIConnection:
                     "content": response.choices[0].message.content}
 
         if verbose:
+            print('----------ANSWER-----------')
             self.print_messages([response])
+            print('----------END ANSWER-----------')
 
         if self.logger.is_logging():
-            self.logger.write_messages(messages, tokens_messages)
+            self.logger.write_messages(response, tokens_messages, appendix="answer")
 
         return response
 
