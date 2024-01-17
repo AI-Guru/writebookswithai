@@ -31,9 +31,6 @@ class WriteLogs():
         if self.log_persistent:
             mode = "a"
 
-        if os.path.isfile(self.message_log_file):
-            os.remove(self.message_log_file)
-
         if appendix is None:
             appendix = ""
         elif not appendix.endswith(": "):
@@ -42,5 +39,4 @@ class WriteLogs():
         with open(self.message_log_file, mode, encoding='utf-8') as file:
             for item in messages:
                 file.write(appendix + str(item) + "\n")
-            file.write("\n")
-            file.write(f"Length of message in tokens: {tokens_message}")
+            file.write(f"Length of message in tokens: {tokens_message}\n\n")

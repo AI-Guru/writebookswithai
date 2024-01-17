@@ -53,7 +53,7 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False, model
         model_connection = OpenAIConnection(logger)
     
         chain_executor = ChainExecutor(model_connection)
-#        chain_executor.add_element(WritePlot(book_path)) Experimental
+        #chain_executor.add_element(WritePlot(book_path)) # Experimental
         chain_executor.add_element(FindBookTitle(book_path))
         chain_executor.add_element(WriteTableOfContents(book_path))
         chain_executor.add_element(WriteChapterSummaries(book_path))

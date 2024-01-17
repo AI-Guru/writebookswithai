@@ -67,8 +67,8 @@ class WritePlot(BaseBookChainElement):
         self.process_steps = ProcessSteps()
 
         self.description = ""
-        self.refine_plot = 0
-        self.refine_max = 0
+        self.refine_plot = 1
+        self.refine_max = 5
         self.current_step = 0
         self.done = False
         self.sysmessage = []
@@ -111,71 +111,56 @@ class WritePlot(BaseBookChainElement):
         elif self.process_steps.get_step_index() == 1:
             with open(self.description_path, "r", encoding='utf-8') as f:
                 self.description = f.read()
+
+            self.messages = self.sysmessage.copy()
             prompt = PromptTemplate.get(
                 "write_plot_prompt").format(self.description)
-            self.messages = self.sysmessage.copy()
+
             self.messages += [{"role": "user", "content": prompt}]
 
-            if llm_connection.logger.is_logging():
-                llm_connection.logger.write_messages(
-                    self.messages, appendix="message")
-
             response_message = llm_connection.chat(
-                self.messages, version4=True)
-
-            if llm_connection.logger.is_logging():
-                llm_connection.logger.write_messages(
-                    response_message, appendix="answer")
+                self.messages,
+                version4=True)
 
             self.key_content = response_message["content"]
             self.process_steps.advance_step()
 
         # Refine plot, first run
         elif self.process_steps.get_step_index() == 2:
-            prompt = PromptTemplate.get("write_refined_plot").format(
-                self.description, self.key_content)
+
             self.messages = self.sysmessage.copy()
+            prompt = PromptTemplate.get(
+                "write_refined_plot").format(
+                self.description, self.key_content)
             self.messages += [{"role": "user", "content": prompt}]
 
-            if llm_connection.logger.is_logging():
-                llm_connection.logger.write_messages(
-                    self.messages, appendix="message")
-
             response_message = llm_connection.chat(
-                self.messages, version4=True)
-
-            if llm_connection.logger.is_logging():
-                llm_connection.logger.write_messages(
-                    response_message, appendix="answer")
+                self.messages,
+                version4=True)
 
             self.key_content = self.extract_content(
                 response_message["content"], "Step 2:")
             self.process_steps.advance_step()
 
         elif self.process_steps.get_step_index() == 3:
-            print(
-                f"Refining plot, iteration #{self.refine_plot}/{self.refine_max}")
-            prompt = PromptTemplate.get("write_refined_plot").format(
-                self.description, self.key_content)
+            print("Refining plot, iteration "
+                  f"#{self.refine_plot}/{self.refine_max}")
+
             self.messages = self.sysmessage.copy()
+            prompt = PromptTemplate.get(
+                "write_refined_plot").format(
+                self.description, self.key_content)
+
             self.messages += [{"role": "user", "content": prompt}]
 
-            if llm_connection.logger.is_logging():
-                llm_connection.logger.write_messages(
-                    self.messages, appendix="message")
-
             response_message = llm_connection.chat(
-                self.messages, version4=True)
-
-            if llm_connection.logger.is_logging():
-                llm_connection.logger.write_messages(
-                    response_message, appendix="answer")
+                self.messages,
+                version4=True)
 
             self.key_content = self.extract_content(
                 response_message["content"], "Step 2:")
 
             self.refine_plot += 1
-            self.process_steps.advance_step()
 
             if self.refine_plot >= self.refine_max:
                 # Write the book titles to a file.
@@ -183,6 +168,7 @@ class WritePlot(BaseBookChainElement):
                 with open(self.plot_path, "w", encoding='utf-8') as f:
                     f.write(plot_line)
 
+                self.process_steps.advance_step()
                 self.done = True
 
         elif self.process_steps.get_step_index() is None:

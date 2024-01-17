@@ -86,7 +86,7 @@ class OpenAIConnection:
             print('----------END ANSWER-----------')
 
         if self.logger.is_logging():
-            self.logger.write_messages(response, tokens_messages, appendix="answer")
+            self.logger.write_messages([response], tokens_messages, appendix="answer")
 
         return response
 
