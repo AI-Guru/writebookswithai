@@ -1,10 +1,11 @@
 import os
 import sys
-import fire
-import dotenv
-import traceback
 import time
 import datetime
+import traceback
+import dotenv
+import fire
+
 
 from source.openaiconnection import OpenAIConnection
 from source.chain import ChainExecutor
@@ -39,7 +40,8 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False, model
     # See if the description.txt file exists. If not, raise an error.
     description_path = os.path.join(book_path, "description.txt")
     if not os.path.exists(description_path):
-        raise ExitException(f"File {description_path} does not exist. Please create it. It should contain a short description of the book.")
+        raise ExitException(f"File {description_path} does not exist."
+                            "Please create it. It should contain a short description of the book.")
 
     # Create the logger
     logger = WriteLogs(book_path, log=log, log_persistent=log_persistent)
@@ -104,4 +106,3 @@ if __name__ == "__main__":
         print(e)
     except:
         traceback.print_exc()
-
