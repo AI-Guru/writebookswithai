@@ -1,16 +1,17 @@
 import os
 import sys
-import fire
-import dotenv
-import traceback
 import time
 import datetime
+import traceback
+import dotenv
+import fire
+
 
 from source.openaiconnection import OpenAIConnection
-from source.openaiagents import OpenAIAgents
 from source.chain import ChainExecutor
 from source.writelogs import WriteLogs
 from source.bookchainelements import (
+    WritePlot,
     FindBookTitle,
     WriteTableOfContents,
     WriteChapterSummaries,
@@ -19,13 +20,18 @@ from source.bookchainelements import (
     JoinBook
 )
 
+from source.oaa import (
+    OAAControl,
+    CreatePlot
+)
+
 # Load the environment variables.
 dotenv.load_dotenv()
 
 class ExitException(Exception):
     pass
 
-def writebook(book_path, log=False, log_persistent=False, assistant=False):
+def writebook(book_path, log=False, log_persistent=False, assistant=False, model="gpt-3.5-turbo"):
 
     # See if the book path exists. If not, raise an error.
     if not os.path.exists(book_path):
@@ -34,7 +40,8 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False):
     # See if the description.txt file exists. If not, raise an error.
     description_path = os.path.join(book_path, "description.txt")
     if not os.path.exists(description_path):
-        raise ExitException(f"File {description_path} does not exist. Please create it. It should contain a short description of the book.")
+        raise ExitException(f"File {description_path} does not exist."
+                            "Please create it. It should contain a short description of the book.")
 
     # Create the logger
     logger = WriteLogs(book_path, log=log, log_persistent=log_persistent)
@@ -48,6 +55,7 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False):
         model_connection = OpenAIConnection(logger)
     
         chain_executor = ChainExecutor(model_connection)
+        #chain_executor.add_element(WritePlot(book_path)) # Experimental
         chain_executor.add_element(FindBookTitle(book_path))
         chain_executor.add_element(WriteTableOfContents(book_path))
         chain_executor.add_element(WriteChapterSummaries(book_path))
@@ -55,11 +63,11 @@ def writebook(book_path, log=False, log_persistent=False, assistant=False):
         chain_executor.add_element(WriteChapters(book_path))
         chain_executor.add_element(JoinBook(book_path))
     else:
-        # Create the connection    
-        model_connection = OpenAIAgents(logger, book_path)
-        
+        # Create the connection and load history
+        model_connection = OAAControl(book_path, logger, model)
+
         chain_executor = ChainExecutor(model_connection)
-        #chain_executor.add_element(CreateMainPlot)
+        chain_executor.add_element(CreatePlot(book_path))
 
 
     # Run the chain.
@@ -88,10 +96,13 @@ if __name__ == "__main__":
                 args[i] = '--log_persistent=True'
             elif arg == "--a":
                 args[i] = "--assistant=True"
+            elif (arg == "--m 4" or arg == "--m gpt4"):
+                args[i] = "--model=gpt-4"
+            elif (arg == "--m 3" or arg == "--m gpt3"):
+                args[i] = "--model=gpt-3.5-turbo"
         print(args)
         fire.Fire(writebook, command=args)
     except ExitException as e:
         print(e)
     except:
         traceback.print_exc()
-

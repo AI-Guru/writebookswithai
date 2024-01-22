@@ -1,0 +1,7 @@
+Your task is to write the overall plot for a book. The general description of the book is as follows:
+
+"""
+{}
+"""
+
+Create the plot. Use 250 words or less. Make sure the plot covers enough elements to be expanded into a story long enough to cover a book. Write a catchy plot. Avoid clichés, predictable story twists and commonly used plot elements. Omit descriptions, background and details of characters and locations. Use placeholders for characters and locations. Focus on the general plot exclusively and only.

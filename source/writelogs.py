@@ -19,20 +19,24 @@ class WriteLogs():
         """Returns whether logging is enabled."""
         return self.log
 
-    def write_messages(self, messages: list, tokens_message: int) -> None:
-        """Writes message to gpt to the log file, overwriting the previous log file."""
+    def write_messages(self, messages: list,
+                       tokens_message: int = None,
+                       appendix: str = None) -> None:
+        """Writes message to gpt to the log file, either overwriting or appending."""
+
         if not self.log:
             return
-        elif self.log_persistent:
-            mode = "a"
-        else:
+        if self.log:
             mode = "w"
+        if self.log_persistent:
+            mode = "a"
 
-        if os.path.isfile(self.message_log_file):
-            os.remove(self.message_log_file)
+        if appendix is None:
+            appendix = ""
+        elif not appendix.endswith(": "):
+            appendix = appendix + ": "
 
         with open(self.message_log_file, mode, encoding='utf-8') as file:
             for item in messages:
-                file.write(str(item) + "\n")
-            file.write("\n")
-            file.write(f"Length of message in tokens: {tokens_message}")
+                file.write(appendix + str(item) + "\n")
+            file.write(f"Length of message in tokens: {tokens_message}\n\n")

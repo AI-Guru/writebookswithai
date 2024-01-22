@@ -32,5 +32,5 @@ class BaseChainElement:
     def is_done(self):
         raise NotImplementedError
     
-    def step():
+    def step(self, llm_connection):
         raise NotImplementedError
