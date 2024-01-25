@@ -1,22 +1,22 @@
-import os
 from openai import OpenAI
 from retry import retry
-from source.tokencounter import TokenCounter
+
+from source.project import Project
 
 
+class OpenAIConnection(Project):
 
-class OpenAIConnection:
+    def __init__(self,
+                book_path: str,
+                logging: bool,
+                persistent_logging: bool
+                ):
+        
+        super().__init__(book_path=book_path,
+                         logging=logging,
+                         persistent_logging=persistent_logging)
 
-    def __init__(self, logger):
-        # Raise an exception if the OpenAI API key is not set.
-        # Else set the API key.
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key is None:
-            raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
-        self.logger = logger
-
-        self.client = OpenAI(api_key=api_key)
+        self.client = OpenAI(api_key=self.api_key)
 
         # For 3.5 use only the 16k model.
         self.chatbot_model_long = "gpt-3.5-turbo-16k"
@@ -27,8 +27,6 @@ class OpenAIConnection:
         self.chatbot_contextmax_4 = 8_192
         self.chatbot_contextmax_4_long = 32_768
         
-        self.TokenCounter = TokenCounter()
-        self.token_count = 0
 
     @retry(tries=5, delay=5)
     def embed(self, texts: list[str]):
@@ -61,7 +59,7 @@ class OpenAIConnection:
             model = self.chatbot_model_long
             max_tokens = self.chatbot_contextmax_long
 
-        tokens_messages = self.TokenCounter.num_tokens_from_messages(messages, model)
+        tokens_messages = self.token_counter.num_tokens_from_messages(messages, model)
         print(f"tokens for message: {tokens_messages}")
 
         if self.logger.is_logging():

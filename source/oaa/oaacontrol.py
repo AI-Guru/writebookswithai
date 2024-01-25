@@ -3,51 +3,34 @@
 import os
 
 from source.oaa.openaiagents import OpenAIAgents
-from source.writelogs import WriteLogs
-from source.filemanagement import FileManagement
-from source.tokencounter import TokenCounter
+from source.project import Project
 
 
-class OAAControl():
+class OAAControl(Project):
     """ Class to control process, handling of assistants, threads, messages and run commands."""
 
     PATHCONTROLTEMPLATES = "source/oaa/templates/"
 
-    def __init__(self, book_path: str, logger: WriteLogs, model: str) -> None:
-        self.model = model
+    def __init__(self,
+                 book_path: str,
+                 logging: bool,
+                 persistent_logging: bool,
+                 gpt_model: str,
+                 ) -> None:
 
-        # Files and paths
-        self.book_path = book_path
-        self.output_path = os.path.join(self.book_path, "output")
-        self.status_file_path = os.path.join(self.output_path, "status.json")
+        super().__init__(book_path=book_path,
+                         logging=logging,
+                         persistent_logging=persistent_logging)
 
-        # Project status and variables
-        self.status = {}
+        self.gpt_model = gpt_model
 
-        # Initialize objects
-        self.logger = logger
-        self.fm = FileManagement()
-        self.handler = OpenAIAgents(book_path)
-        self.token_counter = TokenCounter()
-
-        # Set up project
-
-        # Check status of project
-        if not os.path.exists(os.path.join(self.book_path, "output")):
-            os.makedirs(os.path.join(self.book_path, "output"))
-        else:
-            try:
-                self.status = self.fm.read_json(self.status_file_path)
-            except FileNotFoundError as exc:
-                raise FileNotFoundError("Output directory exists, but status file not found.\n"
-                                        "Cannot retrieve project status. Please reset project.\n"
-                                        f"File not found: {self.status_file_path}")from exc
+        self.handler = OpenAIAgents(book_path=book_path, api_key=self.api_key)
 
         # Retrieve assistants if project is already initialized
         if self.status:
             try:
                 file_path = os.path.join(self.output_path, "agents.json")
-                agent_dict = self.fm.read_json(file_path)
+                agent_dict = self.read_json(file_path)
                 for assistant_id in agent_dict.keys():
                     self.handler.retrieve_assistant(assistant_id)
 
@@ -62,17 +45,27 @@ class OAAControl():
             try:
                 file_path = os.path.join(
                     self.PATHCONTROLTEMPLATES, "agents.json")
-                agent_dict = self.fm.read_json(file_path)
+                agent_dict = self.read_json(file_path)
             except FileNotFoundError as exc:
                 raise FileNotFoundError("Could not find template file for agents.\n"
                                         f"File not found: {file_path}") from exc
 
             for key, value in agent_dict.items():
-                self.handler.create_new_assistant(key, value, self.model)
-                self.fm.write_json(os.path.join(self.output_path, "agents.json"),
-                                   self.handler.get_all_assistants())
+                self.handler.create_new_assistant(key, value, self.gpt_model)
+                self.write_json(os.path.join(self.output_path, "agents.json"),
+                                self.handler.get_all_assistants())
 
     def query_assistant(self, assistant_name: str, message_text: str, thread_id: str = None):
+        """ Query the OpenAI assistant with the message.
+
+        Args:
+            assistant_name (str): The name of the assistant to query.
+            message_text (str): The query to be processed.
+            thread_id (str, optional): ThreadID. Defaults to None.
+
+        Raises:
+            ValueError: Assistant of given name not found.
+        """
 
         assistant = self.handler.get_assistant_from_name(assistant_name)
         if not assistant:
@@ -96,7 +89,7 @@ class OAAControl():
         dict_run = {"thread_id": thread_id,
                     "run_id": run.id}
 
-        self.fm.write_json(os.path.join(
+        self.write_json(os.path.join(
             self.output_path, "run.json"), dict_run)
 
         print(self.handler.retrieve_answer(run))

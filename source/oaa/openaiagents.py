@@ -24,14 +24,9 @@ class OpenAIAgents():
     JSON_FILE_NAME = 'assistants.json'
     ASSISTANT_PREFIX = "AIB_"
 
-    def __init__(self, book_path: str):
+    def __init__(self, book_path: str, api_key: str):
 
         self.file_path = os.path.join(book_path, self.JSON_FILE_NAME)
-
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key is None:
-            raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
         self.client = OpenAI(api_key=api_key)
 
         self.assistants_dict = {}
