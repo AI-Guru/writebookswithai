@@ -26,7 +26,8 @@ from source.oaa import (
 )
 
 from source.lc import (
-    LCControl
+    LCControl,
+    LCCreatePlot
 )
 
 # Load the environment variables.
@@ -34,7 +35,8 @@ dotenv.load_dotenv()
 
 # Define default values.
 DEFAULT_GPT_MODEL = "gpt-3.5-turbo"
-DEFAULT_LOCAL_LLM = "dolphin-mixtral"
+DEFAULT_LOCAL_CM = "dolphin-mixtral"
+DEFAULT_LOCAL_LLM = "llama2:13b"
 
 
 class ExitException(Exception):
@@ -42,11 +44,13 @@ class ExitException(Exception):
 
 
 def writebook(book_path: str,
+              verbose: bool,
               logging: bool,
               persistent_logging: bool,
               assistant: bool,
               langchain: bool,
               gpt_model: str,
+              local_cm:str,
               local_llm: str):
 
     # See if the book path exists. If not, raise an error.
@@ -69,8 +73,9 @@ def writebook(book_path: str,
 
         # Create the model connection.
         model_connection = OpenAIConnection(book_path=book_path,
-                                      logging=logging,
-                                      persistent_logging=persistent_logging)
+                                            verbose=verbose,
+                                            logging=logging,
+                                            persistent_logging=persistent_logging)
 
         # Add the chain elements.
         chain_executor = ChainExecutor(model_connection)
@@ -87,6 +92,7 @@ def writebook(book_path: str,
 
         # Create the connection and load history
         model_connection = OAAControl(book_path=book_path,
+                                      verbose=verbose,
                                       logging=logging,
                                       persistent_logging=persistent_logging,
                                       gpt_model=gpt_model
@@ -102,13 +108,16 @@ def writebook(book_path: str,
         # Create the connection to the Ollama server and setup the project
         model_connection = LCControl(book_path=book_path,
                                      logging=logging,
+                                     verbose=verbose,
                                      persistent_logging=persistent_logging,
                                      gpt_model=gpt_model,
-                                     local_llm=local_llm
+                                     ollama_cm_model=local_cm,
+                                     ollama_llm_model=local_llm
                                      )
 
         # Add the chain elements.
-        # TODO: Add the chain elements.
+        chain_executor = ChainExecutor(model_connection)
+        chain_executor.add_element(LCCreatePlot())
 
     # Run the chain.
     chain_executor.run()
@@ -130,6 +139,9 @@ def main():
     parser = argparse.ArgumentParser(description="Write books with AI.")
     parser.add_argument('book_path', type=str,
                         help='Path to the book directory')
+    
+    parser.add_argument('--verbose', '--v', action='store_true',
+                        help='Activate verbose mode')
 
     parser.add_argument('--logging', '--l', action='store_true',
                         help='Activate logging')
@@ -148,9 +160,13 @@ def main():
                         # default='3.5',
                         help='Select version of ChatGPT (3.5, 4)')
 
+    parser.add_argument('--local_cm', '--cm', type=str,
+                        default=DEFAULT_LOCAL_CM,
+                        help='Name of local chat model (optional)')
+
     parser.add_argument('--local_llm', '--llm', type=str,
                         default=DEFAULT_LOCAL_LLM,
-                        help='Pfad zum lokalen LLM (optional)')
+                        help='Name of local LLM (optional)')
 
     args = parser.parse_args()
 
@@ -166,9 +182,10 @@ def main():
     # OpenAI's assistants take too long to respond, so that option is disabled for now.
     args.assistant = False
 
-    writebook(args.book_path, logging=args.logging, persistent_logging=args.persistent_logging,
+    writebook(args.book_path, verbose=args.verbose, logging=args.logging,
+              persistent_logging=args.persistent_logging, 
               assistant=args.assistant, langchain=args.langchain, gpt_model=mapped_gpt_model,
-              local_llm=args.local_llm)
+              local_cm=args.local_cm,local_llm=args.local_llm)
 
 
 if __name__ == '__main__':

@@ -8,11 +8,13 @@ class OpenAIConnection(Project):
 
     def __init__(self,
                 book_path: str,
+                verbose: bool,
                 logging: bool,
                 persistent_logging: bool
                 ):
         
         super().__init__(book_path=book_path,
+                         verbose=verbose,
                          logging=logging,
                          persistent_logging=persistent_logging)
 
@@ -26,6 +28,7 @@ class OpenAIConnection(Project):
         self.chatbot_model_4_long = "gpt-4-32k"
         self.chatbot_contextmax_4 = 8_192
         self.chatbot_contextmax_4_long = 32_768
+        
         
 
     @retry(tries=5, delay=5)
@@ -43,9 +46,9 @@ class OpenAIConnection(Project):
         return embeddings
 
     @retry(tries=5, delay=5)
-    def chat(self, messages, long=False, verbose=True, version4=False):
+    def chat(self, messages, long=False, version4=False):
 
-        if verbose:
+        if self.verbose:
             print('----------MESSAGE-----------')
             self.print_messages(messages)
             print('----------END MESSAGE-----------')
@@ -78,7 +81,7 @@ class OpenAIConnection(Project):
         response = {"role": response.choices[0].message.role,
                     "content": response.choices[0].message.content}
 
-        if verbose:
+        if self.verbose:
             print('----------ANSWER-----------')
             self.print_messages([response])
             print('----------END ANSWER-----------')

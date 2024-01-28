@@ -13,12 +13,14 @@ class OAAControl(Project):
 
     def __init__(self,
                  book_path: str,
+                 verbose: bool,
                  logging: bool,
                  persistent_logging: bool,
                  gpt_model: str,
                  ) -> None:
 
         super().__init__(book_path=book_path,
+                         verbose=verbose,
                          logging=logging,
                          persistent_logging=persistent_logging)
 
@@ -96,4 +98,5 @@ class OAAControl(Project):
 
     def get_token_count(self):
         """ Returns the total number of tokens used in all steps. """
-        return sum(self.status.values())
+        # TODO: Implement token count for assistants
+        return 0

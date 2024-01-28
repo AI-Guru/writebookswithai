@@ -17,6 +17,7 @@ class Project():
 
     def __init__(self,
                  book_path: str,
+                 verbose: bool = False,
                  logging: bool = False,
                  persistent_logging: bool = False) -> None:
 
@@ -24,7 +25,12 @@ class Project():
         self.book_path = book_path
         self.output_path = os.path.join(self.book_path, "output")
         self.status_file_path = os.path.join(self.output_path, "status.json")
+        self.description_path = os.path.join(self.book_path, "description.txt")
 
+        self.verbose = verbose
+        self.logging = logging
+        self.persistent_logging = persistent_logging
+        
         # Initialize objects
         self.logger = WriteLogs(
             book_path,
@@ -110,3 +116,10 @@ class Project():
 
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(json_dict, f, indent=4)
+            
+    def get_prompt_template(self, template_id):
+
+        template_path = os.path.join("prompt_templates", template_id + ".txt")
+        with open(template_path, "r", encoding='utf-8') as f:
+            template = f.read()
+        return template
