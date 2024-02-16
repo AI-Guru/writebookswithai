@@ -26,11 +26,15 @@ class Project():
         self.output_path = os.path.join(self.book_path, "output")
         self.status_file_path = os.path.join(self.output_path, "status.json")
         self.description_path = os.path.join(self.book_path, "description.txt")
+        self.progress_file_path = os.path.join(self.output_path, "progress.json")
+
+        # TODO: Use steps.json or prompt_templates method?
+        self.steps_json_path = os.path.join("source", "lc", "steps.json")
 
         self.verbose = verbose
         self.logging = logging
         self.persistent_logging = persistent_logging
-        
+
         # Initialize objects
         self.logger = WriteLogs(
             book_path,
@@ -40,9 +44,13 @@ class Project():
         self.token_counter = TokenCounter()
         self.token_count = 0
 
+        # Init variables
         self.api_key = os.getenv("OPENAI_API_KEY")
         if self.api_key is None:
             raise ValueError("OPENAI_API_KEY environment variable is not set.")
+
+        with open(self.description_path, "r", encoding='utf-8') as f:
+            self.description = f.read()
 
         self.status = {}
         self.setup()
@@ -59,11 +67,12 @@ class Project():
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
 
-            self.status["Current status"] = {
-                "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Status": "Project initialized"}
+            self.set_current_status("Project initialized", "Completed")
+            # self.status["Current status"] = {
+            #     "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            #     "Status": "Project initialized"}
 
-            self.write_json(self.status_file_path, self.status)
+            #self.write_current_status()
         else:
             try:
                 self.status = self.read_json(self.status_file_path)
@@ -72,22 +81,50 @@ class Project():
                                         "Cannot retrieve project status. Please reset project.\n"
                                         f"File not found: {self.status_file_path}")from exc
 
-    def set_current_status(self, status: str):
+    def set_current_status(self, current_step: str, current_status: str):
         """ Set the current status of the project.
 
         Args:
-            status (str): Status to set.
+            current_step (str): Current step in process.
+            current_status (str): Status of current step.
         """
         current_status = self.status.get("Current status")
 
         # Save current status to status dictionary
         if current_status is not None:
-            self.status[current_status["Time"]] = current_status["Status"]
+            self.status[current_status["Time"]] = f'{current_status["Step"]}: {current_status["Status"]}'
 
         # Set new current status
         self.status["Current status"] = {
             "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Status": status}
+            "Step": current_step,
+            "Status": current_status}
+        
+        # Write status to file
+        self.write_json(self.status_file_path, self.status)
+
+    def write_current_status(self):
+        """ Writes the current status to the status JSON."""
+
+        self.write_json(self.status_file_path, self.status)
+
+    def save_current_progress(self, progress: list):
+        """ Saves the current progress to the progress JSON.
+
+        Args:
+            progress (list): List with recent conversation history.
+        """
+        dict_progress = {"progress": progress}
+        self.write_json(self.progress_file_path, dict_progress)
+
+    def load_current_progress(self):
+        """ Loads the current progress from the progress JSON.
+
+        Returns:
+            List: List with recent conversation history.
+        """
+        dict_progress = self.read_json(self.progress_file_path)
+        return dict_progress["progress"]
 
     def read_json(self, file_path: str) -> dict:
         """ Reads a json file and returns dictionary from json.
@@ -116,10 +153,19 @@ class Project():
 
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(json_dict, f, indent=4)
-            
+
     def get_prompt_template(self, template_id):
+        # TODO: Use this method or the one using steps.json?
 
         template_path = os.path.join("prompt_templates", template_id + ".txt")
         with open(template_path, "r", encoding='utf-8') as f:
             template = f.read()
         return template
+
+    def get_book_description(self):
+        """ Getter for the book description.
+
+        Returns:
+            String: Book description.
+        """
+        return self.description

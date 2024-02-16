@@ -1,17 +1,17 @@
 Your task is to improve the general plot for a book. The general description of the book is:
 
 """
-{}
+{book_description}
 """
 
 The current draft of the plot is
 """
-{}
+{draft}
 """
 
 Here are some suggestions on how to improve the plot:
 """
-{}
+{review}
 """
 
 Rewrite the current plot by incorporating the suggestions above. 

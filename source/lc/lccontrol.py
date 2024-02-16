@@ -12,13 +12,13 @@ class LCControl(Project):
     """ LangChain Control Class to manage the LLMs and their queries."""
 
     def __init__(self,
-                book_path: str,
-                verbose: bool,
-                logging: bool,
-                persistent_logging: bool,
-                gpt_model: str,
-                ollama_cm_model: str,
-                ollama_llm_model: str):
+                 book_path: str,
+                 verbose: bool,
+                 logging: bool,
+                 persistent_logging: bool,
+                 gpt_model: str,
+                 ollama_cm_model: str,
+                 ollama_llm_model: str):
         """ Set up the project and all required objects.
 
         Args:
@@ -38,14 +38,14 @@ class LCControl(Project):
                          persistent_logging=persistent_logging)
         if gpt_model:
             self.gpt = ChatOpenAI(openai_api_key=self.api_key, model=gpt_model)
-        
+
         if ollama_cm_model:
             self.local_cm = ChatOllama(model=ollama_cm_model)
-        
+
         if ollama_llm_model:
             self.local_llm = Ollama(model=ollama_llm_model)
 
-
+        self.stepfile = self.read_json(self.steps_json_path)
 
     def query_gpt(self, system_message: str, message: str):
         """ Wrapper of the function that queries ChatGPT online.
@@ -58,8 +58,7 @@ class LCControl(Project):
             _type_: _description_
         """
         return self.query(model=self.gpt, system_message=system_message, message=message)
-    
-    
+
     def query_local_cm(self, system_message: str, message: str):
         """ Wrapper of the function that queries the local LLM.
 
@@ -102,23 +101,22 @@ class LCControl(Project):
         ])
 
         parser = StrOutputParser()
-        chain = prompt | model# | parser
-        
-        
+        chain = prompt | model | parser
+
         if self.verbose:
             print('----------QUERY-----------')
             print(print(prompt))
             print('----------END QUERY-----------')
 
         reply = chain.invoke({})
-        
+
         if self.verbose:
             print('----------ANSWER-----------')
             print(reply)
             print('----------END ANSWER-----------')
-            
+
         return reply
-    
+
     def print_messages(self, messages):
         for message in messages:
             print("\033[92m", end="")
@@ -127,8 +125,7 @@ class LCControl(Project):
             print(f"{message['content']}")
             print("")
             print("\033[0m", end="")
-            
-        
+
     def get_token_count(self):
         """ Returns the total number of tokens used in all steps. """
         # TODO: Implement token count for assistants

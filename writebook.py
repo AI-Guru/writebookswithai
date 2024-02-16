@@ -27,7 +27,7 @@ from source.oaa import (
 
 from source.lc import (
     LCControl,
-    LCCreatePlot
+    LCChainStep
 )
 
 # Load the environment variables.
@@ -117,7 +117,8 @@ def writebook(book_path: str,
 
         # Add the chain elements.
         chain_executor = ChainExecutor(model_connection)
-        chain_executor.add_element(LCCreatePlot())
+        chain_executor.add_element(LCChainStep("Creating Plot"))
+        #chain_executor.add_element(LCChainStep("Refining Plot"))
 
     # Run the chain.
     chain_executor.run()
@@ -195,27 +196,3 @@ if __name__ == '__main__':
         print(e)
     except:
         traceback.print_exc()
-
-
-# if __name__ == "__main__":
-#     try:
-#         args = sys.argv[1:]
-#         for i, arg in enumerate(args):
-#             if arg == '--l':
-#                 args[i] = '--log=True'
-#             elif arg == '--lp':
-#                 args[i] = '--log_persistent=True'
-#             # OpenAI's assistants take too long to respond, so that option is disabled for now.
-#             # elif arg == "--a":
-#             #     args[i] = "--assistant=True"
-#             elif (arg == "--m 4" or arg == "--m gpt4"):
-#                 args[i] = "--oai_model=gpt-4"
-#             elif (arg == "--m 3" or arg == "--m gpt3"):
-#                 args[i] = "--oai_model=gpt-3.5-turbo"
-
-#         print(args)
-#         fire.Fire(writebook, command=args)
-#     except ExitException as e:
-#         print(e)
-#     except:
-#         traceback.print_exc()
