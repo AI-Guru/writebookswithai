@@ -1,0 +1,22 @@
+Your task is to improve the general plot for a book. The general description of the book is:
+
+"""
+{}
+"""
+
+The current draft of the plot is
+"""
+{}
+"""
+
+Here are some suggestions on how to improve the plot:
+"""
+{}
+"""
+
+Rewrite the current plot by incorporating the suggestions above. 
+Detail out twists of the story. Avoid clichés, predictable endings, predictable twists and commonly used plot elements.
+Remember: The plot should have enough elements and be long enough for a full book.
+Do not generate names or locations but use placeholders: Use single letters as placeholders for characters, groups and factions and numbers as placeholders for locations.
+Use 250 words or less. 
+Reply with the plot only.
