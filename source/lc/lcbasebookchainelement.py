@@ -2,14 +2,13 @@
 
 from source.chain import BaseChainElement
 
+
 class LCBaseBookChainElement(BaseChainElement):
     # pylint: disable=abstract-method
-    
+
     def __init__(self):
         pass
-        
-    
-    
+
     def extract_content(self, content, start_marker, end_marker=None):
 
         # Find the start and end of the relevant content
@@ -28,5 +27,3 @@ class LCBaseBookChainElement(BaseChainElement):
         relevant_content = content[start_index + len(start_marker):end_index]
 
         return relevant_content
-    
-        

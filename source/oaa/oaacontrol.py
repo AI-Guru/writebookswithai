@@ -3,36 +3,30 @@
 import os
 
 from source.oaa.openaiagents import OpenAIAgents
-from source.project import Project
 
 
-class OAAControl(Project):
+class OAAControl():
     """ Class to control process, handling of assistants, threads, messages and run commands."""
 
     PATHCONTROLTEMPLATES = "source/oaa/templates/"
 
     def __init__(self,
-                 book_path: str,
-                 verbose: bool,
-                 logging: bool,
-                 persistent_logging: bool,
+                 project_control,
                  gpt_model: str,
                  ) -> None:
 
-        super().__init__(book_path=book_path,
-                         verbose=verbose,
-                         logging=logging,
-                         persistent_logging=persistent_logging)
+        self.project_control = project_control
 
         self.gpt_model = gpt_model
 
-        self.handler = OpenAIAgents(book_path=book_path, api_key=self.api_key)
+        self.handler = OpenAIAgents(book_path=self.project_control.book_path,
+                                    api_key=self.project_control.api_key)
 
         # Retrieve assistants if project is already initialized
-        if self.status:
+        if self.project_control.status:
             try:
-                file_path = os.path.join(self.output_path, "agents.json")
-                agent_dict = self.read_json(file_path)
+                file_path = os.path.join(self.project_control.output_path, "agents.json")
+                agent_dict = self.project_control.read_json(file_path)
                 for assistant_id in agent_dict.keys():
                     self.handler.retrieve_assistant(assistant_id)
 
@@ -47,14 +41,15 @@ class OAAControl(Project):
             try:
                 file_path = os.path.join(
                     self.PATHCONTROLTEMPLATES, "agents.json")
-                agent_dict = self.read_json(file_path)
+                agent_dict = self.project_control.read_json(file_path)
             except FileNotFoundError as exc:
                 raise FileNotFoundError("Could not find template file for agents.\n"
                                         f"File not found: {file_path}") from exc
 
             for key, value in agent_dict.items():
                 self.handler.create_new_assistant(key, value, self.gpt_model)
-                self.write_json(os.path.join(self.output_path, "agents.json"),
+                self.project_control.write_json(
+                                    os.path.join(self.project_control.output_path, "agents.json"),
                                 self.handler.get_all_assistants())
 
     def query_assistant(self, assistant_name: str, message_text: str, thread_id: str = None):
@@ -91,8 +86,8 @@ class OAAControl(Project):
         dict_run = {"thread_id": thread_id,
                     "run_id": run.id}
 
-        self.write_json(os.path.join(
-            self.output_path, "run.json"), dict_run)
+        self.project_control.write_json(os.path.join(
+            self.project_control.output_path, "run.json"), dict_run)
 
         print(self.handler.retrieve_answer(run))
 

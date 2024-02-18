@@ -22,14 +22,13 @@ class Project():
                  persistent_logging: bool = False) -> None:
 
         # Files and paths
+        self.steps_json_path = os.path.join("source", "lc", "steps.json")
+        
         self.book_path = book_path
         self.output_path = os.path.join(self.book_path, "output")
         self.status_file_path = os.path.join(self.output_path, "status.json")
         self.description_path = os.path.join(self.book_path, "description.txt")
         self.progress_file_path = os.path.join(self.output_path, "progress.json")
-
-        # TODO: Use steps.json or prompt_templates method?
-        self.steps_json_path = os.path.join("source", "lc", "steps.json")
 
         self.verbose = verbose
         self.logging = logging
@@ -52,7 +51,9 @@ class Project():
         with open(self.description_path, "r", encoding='utf-8') as f:
             self.description = f.read()
 
-        self.status = {}
+        self.step_commands_dict = self.read_json(self.steps_json_path)
+
+        self.status = {}   
         self.setup()
 
     def setup(self):
@@ -66,13 +67,7 @@ class Project():
         # Check status of project
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
-
             self.set_current_status("Project initialized", "Completed")
-            # self.status["Current status"] = {
-            #     "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            #     "Status": "Project initialized"}
-
-            #self.write_current_status()
         else:
             try:
                 self.status = self.read_json(self.status_file_path)
@@ -81,7 +76,7 @@ class Project():
                                         "Cannot retrieve project status. Please reset project.\n"
                                         f"File not found: {self.status_file_path}")from exc
 
-    def set_current_status(self, current_step: str, current_status: str):
+    def set_current_status(self, current_step: str, current_step_status: str):
         """ Set the current status of the project.
 
         Args:
@@ -92,14 +87,15 @@ class Project():
 
         # Save current status to status dictionary
         if current_status is not None:
-            self.status[current_status["Time"]] = f'{current_status["Step"]}: {current_status["Status"]}'
+            self.status[current_status["Time"]] = (
+                    f'{current_status["Step"]}: {current_status["Status"]}')
 
         # Set new current status
         self.status["Current status"] = {
             "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Step": current_step,
-            "Status": current_status}
-        
+            "Status": current_step_status}
+
         # Write status to file
         self.write_json(self.status_file_path, self.status)
 
@@ -154,13 +150,24 @@ class Project():
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(json_dict, f, indent=4)
 
-    def get_prompt_template(self, template_id):
-        # TODO: Use this method or the one using steps.json?
+    def get_prompt_template(self, template_id: str):
+        """ Get the prompt template from the prompt_templates folder.
+
+        Args:
+            template_id (String): Name of the template file.
+
+        Returns:
+            String: Content of the template file.
+        """
 
         template_path = os.path.join("prompt_templates", template_id + ".txt")
         with open(template_path, "r", encoding='utf-8') as f:
             template = f.read()
         return template
+    
+    def get_step_commands(self, step_name: str):
+        # TODO: Validate step_name and JSON keys for step commands
+        return self.step_commands_dict[step_name]
 
     def get_book_description(self):
         """ Getter for the book description.

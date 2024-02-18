@@ -8,6 +8,7 @@ import dotenv
 
 
 from source.openaiconnection import OpenAIConnection
+from source.project import Project
 from source.chain import ChainExecutor
 
 from source.bookchainelements import (
@@ -66,16 +67,18 @@ def writebook(book_path: str,
 
     # Start time.
     start_time = time.time()
+    
+    book_project = Project(book_path=book_path,
+                            verbose=verbose,
+                            logging=logging,
+                            persistent_logging=persistent_logging)
 
     # Create a chain executor.
     if not assistant and not langchain:
         # Write the book by querying OpenAI's API.
 
         # Create the model connection.
-        model_connection = OpenAIConnection(book_path=book_path,
-                                            verbose=verbose,
-                                            logging=logging,
-                                            persistent_logging=persistent_logging)
+        model_connection = OpenAIConnection(project_control=book_project)
 
         # Add the chain elements.
         chain_executor = ChainExecutor(model_connection)
@@ -91,10 +94,7 @@ def writebook(book_path: str,
         # Write the book using OpenAI's assistants.
 
         # Create the connection and load history
-        model_connection = OAAControl(book_path=book_path,
-                                      verbose=verbose,
-                                      logging=logging,
-                                      persistent_logging=persistent_logging,
+        model_connection = OAAControl(project_control=book_project,
                                       gpt_model=gpt_model
                                       )
 
@@ -104,19 +104,16 @@ def writebook(book_path: str,
 
     elif langchain:
         # Write the book using LangChain.
-
+        
         # Create the connection to the Ollama server and setup the project
-        model_connection = LCControl(book_path=book_path,
-                                     logging=logging,
-                                     verbose=verbose,
-                                     persistent_logging=persistent_logging,
+        model_connection = LCControl(project_control=book_project,
                                      gpt_model=gpt_model,
                                      ollama_cm_model=local_cm,
                                      ollama_llm_model=local_llm
                                      )
 
         # Add the chain elements.
-        chain_executor = ChainExecutor(model_connection)
+        chain_executor = ChainExecutor(model_connection, book_project)
         chain_executor.add_element(LCChainStep("Creating Plot"))
         #chain_executor.add_element(LCChainStep("Refining Plot"))
 

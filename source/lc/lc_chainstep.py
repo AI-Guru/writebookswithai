@@ -13,25 +13,26 @@ class LCChainStep(LCBaseBookChainElement):
     """
 
     def __init__(self, step_name):
-        super().__init__()
+        #super().__init__()
+         
         self.step_name = step_name
+        
+               
+        
 
         self.done = False
 
     def is_done(self):
         return self.done
 
-    def step(self, lccontrol):  # pylint: disable=arguments-renamed
-        values_dict = {}
+    def step(self, llm_connection, project_control):  # pylint: disable=arguments-renamed
+        dict_step_commands = project_control.get_step_commands(self.step_name)
+        
+        prompt_placeholders = {}
+        prompt_placeholders["book_description"] = project_control.get_book_description()
+        progress_keys = dict_step_commands["progress_keys"]
 
         # For testing purposes only
-        head = True
-        load_history = False
-        iterations = 2
-
-        progress_keys = ["draft", "review", "rewrite"]
-        values_dict["book_description"] = lccontrol.get_book_description()
-
         head_sys_message = "lc_write_plot_system_message"
         review_sys_message = "lc_write_plot_system_message"
         rewrite_sys_message = "lc_write_plot_system_message"
@@ -41,40 +42,52 @@ class LCChainStep(LCBaseBookChainElement):
         rewrite_message = "lc_rewrite_plot"
         # End of testing purposes
 
-        lccontrol.set_current_status(self.step_name, "Started")
+        project_control.set_current_status(self.step_name, "Started")
 
-        if load_history:
-            values_dict.update(lccontrol.load_current_progress())
+        if ("load_history" in dict_step_commands):
+            prompt_placeholders.update(project_control.load_current_progress())
 
-        if head:
+        if ("head" in dict_step_commands):
             print(f"Started {self.step_name}")
 
-            system_message = lccontrol.get_prompt_template(head_sys_message)
-            message = lccontrol.get_prompt_template(
-                head_message).format(**values_dict)
-            values_dict[progress_keys[0]] = lccontrol.query_local_cm(system_message=system_message,
-                                                                     message=message)
+            system_message = project_control.get_prompt_template(head_sys_message)
+            message = project_control.get_prompt_template(
+                                head_message).format(**prompt_placeholders)
 
-        for i in range(1, iterations + 1):
-            print(f"{self.step_name}: Refining {i}/{iterations}")
+            prompt_placeholders[progress_keys[0]] = (
+                                llm_connection.query_local_cm(system_message=system_message,
+                                                        message=message)
+                                )
 
-            system_message = lccontrol.get_prompt_template(review_sys_message)
-            message = lccontrol.get_prompt_template(
-                review_message).format(**values_dict)
-            values_dict[progress_keys[1]] = lccontrol.query_local_cm(system_message=system_message,
-                                                                     message=message)
+        if ("refining" in dict_step_commands):
+            
+            iterations = dict_step_commands["refining"]["iterations"]
+            for i in range(1, iterations + 1):
+                print(f"{self.step_name}: Refining {i}/{iterations}")
 
-            system_message = lccontrol.get_prompt_template(rewrite_sys_message)
-            message = lccontrol.get_prompt_template(
-                rewrite_message).format(**values_dict)
-            values_dict[progress_keys[2]] = lccontrol.query_local_cm(system_message=system_message,
-                                                                     message=message)
+                system_message = project_control.get_prompt_template(review_sys_message)
+                message = project_control.get_prompt_template(
+                                review_message).format(**prompt_placeholders)
 
-        progress = {key: values_dict[key]
-                    for key in progress_keys if key in values_dict}
-        lccontrol.save_current_progress(progress)
+                prompt_placeholders[progress_keys[1]] = (
+                                llm_connection.query_local_cm(system_message=system_message,
+                                                        message=message)
+                                )
 
-        lccontrol.set_current_status(self.step_name, "Completed")
+                system_message = project_control.get_prompt_template(rewrite_sys_message)
+                message = project_control.get_prompt_template(
+                                rewrite_message).format(**prompt_placeholders)
+
+                prompt_placeholders[progress_keys[2]] = (
+                                llm_connection.query_local_cm(system_message=system_message,
+                                                        message=message)
+                                )
+
+        progress = {key: prompt_placeholders[key]
+                    for key in progress_keys if key in prompt_placeholders}
+        project_control.save_current_progress(progress)
+
+        project_control.set_current_status(self.step_name, "Completed")
 
         print(f"{self.step_name}: Completed")
         self.done = True

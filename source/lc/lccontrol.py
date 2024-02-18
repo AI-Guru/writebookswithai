@@ -5,26 +5,19 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from source.project import Project
 
-
-class LCControl(Project):
+class LCControl():
     """ LangChain Control Class to manage the LLMs and their queries."""
 
     def __init__(self,
-                 book_path: str,
-                 verbose: bool,
-                 logging: bool,
-                 persistent_logging: bool,
+                 project_control,
                  gpt_model: str,
                  ollama_cm_model: str,
                  ollama_llm_model: str):
         """ Set up the project and all required objects.
 
         Args:
-            book_path (str): Path to the book directory.
-            logger (WriteLogs): Instance of the Logger.
-            oai_model (str): Version of OpenAI's ChatGPT to use in project.
+            gpt_model (str): Version of OpenAI's ChatGPT to use in project.
             ollama_cm_model (str): Local Chat Model that is run in Ollama to use in project. 
             ollama_llm_model (str): Local LLM that is run in Ollama to use in project.
 
@@ -32,20 +25,17 @@ class LCControl(Project):
             ValueError: Raises ValueError if OPENAI_API_KEY environment variable is not set.
             FileNotFoundError: Raises FileNotFoundError if project files not found.
         """
-        super().__init__(book_path=book_path,
-                         verbose=verbose,
-                         logging=logging,
-                         persistent_logging=persistent_logging)
+        self.project_control = project_control
+
+        
         if gpt_model:
-            self.gpt = ChatOpenAI(openai_api_key=self.api_key, model=gpt_model)
+            self.gpt = ChatOpenAI(openai_api_key=self.project_control.api_key, model=gpt_model)
 
         if ollama_cm_model:
             self.local_cm = ChatOllama(model=ollama_cm_model)
 
         if ollama_llm_model:
             self.local_llm = Ollama(model=ollama_llm_model)
-
-        self.stepfile = self.read_json(self.steps_json_path)
 
     def query_gpt(self, system_message: str, message: str):
         """ Wrapper of the function that queries ChatGPT online.
@@ -103,14 +93,18 @@ class LCControl(Project):
         parser = StrOutputParser()
         chain = prompt | model | parser
 
-        if self.verbose:
+        if self.project_control.verbose:
             print('----------QUERY-----------')
             print(print(prompt))
             print('----------END QUERY-----------')
 
-        reply = chain.invoke({})
+        try:
+            reply = chain.invoke({})
+        except ConnectionError as e:
+            print(f"Could not connect to Local LLM with error {e}")
+            return None
 
-        if self.verbose:
+        if self.project_control.verbose:
             print('----------ANSWER-----------')
             print(reply)
             print('----------END ANSWER-----------')
