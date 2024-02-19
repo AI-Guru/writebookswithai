@@ -1,0 +1,17 @@
+Your task is to refine the overall plot for a book. The general description of the book is as follows:
+
+"""
+{}
+"""
+
+The current draft of the plot is
+"""
+{}
+"""
+
+Review the current draft given the book description. 
+Identify: (1) Plot holes, (2) clichés, (3) illogical and inconsistent story elements, (4) commonly used story elements.
+Make at least 6 suggestions to improve the draft based on your review. Your suggestions should make the story more appealing and catchy.
+Focus on the plot only. Do not suggest addition of lore. Do not suggest addition of depth and backstories for locations and characters. Do not suggest addition of motivations and/or experiences to characters.
+Ignore: (1) That the plot uses placeholders for characters. (2) That the plot uses placeholders for locations. (3) That locations and characters are not detailed and might lack depth.
+List your answers in a numbered list. 

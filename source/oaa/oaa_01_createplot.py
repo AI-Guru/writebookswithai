@@ -13,9 +13,9 @@ class CreatePlot(OAABaseBookChainElement):
         return self.done
 
 
-    def step(self, oaacontrol):
+    def step(self, llm_connection):
         
-        oaacontrol.query_assistant("BAI_Writer", 
+        llm_connection.query_assistant("BAI_Writer", 
                                    "Create the plotline for a science fiction novel.")
         
         

@@ -1,22 +1,15 @@
-import os
 from openai import OpenAI
 from retry import retry
-from source.tokencounter import TokenCounter
 
 
 
-class OpenAIConnection:
+class OpenAIConnection():
 
-    def __init__(self, logger):
-        # Raise an exception if the OpenAI API key is not set.
-        # Else set the API key.
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key is None:
-            raise ValueError("OPENAI_API_KEY environment variable is not set.")
+    def __init__(self, project_control):
+        
+        self.project_control = project_control
 
-        self.logger = logger
-
-        self.client = OpenAI(api_key=api_key)
+        self.client = OpenAI(api_key=self.project_control.api_key)
 
         # For 3.5 use only the 16k model.
         self.chatbot_model_long = "gpt-3.5-turbo-16k"
@@ -27,8 +20,7 @@ class OpenAIConnection:
         self.chatbot_contextmax_4 = 8_192
         self.chatbot_contextmax_4_long = 32_768
         
-        self.TokenCounter = TokenCounter()
-        self.token_count = 0
+        
 
     @retry(tries=5, delay=5)
     def embed(self, texts: list[str]):
@@ -45,9 +37,9 @@ class OpenAIConnection:
         return embeddings
 
     @retry(tries=5, delay=5)
-    def chat(self, messages, long=False, verbose=True, version4=False):
+    def chat(self, messages, long=False, version4=False):
 
-        if verbose:
+        if self.project_control.verbose:
             print('----------MESSAGE-----------')
             self.print_messages(messages)
             print('----------END MESSAGE-----------')
@@ -61,11 +53,11 @@ class OpenAIConnection:
             model = self.chatbot_model_long
             max_tokens = self.chatbot_contextmax_long
 
-        tokens_messages = self.TokenCounter.num_tokens_from_messages(messages, model)
+        tokens_messages = self.project_control.token_counter.num_tokens_from_messages(messages, model)
         print(f"tokens for message: {tokens_messages}")
 
-        if self.logger.is_logging():
-            self.logger.write_messages(messages, tokens_messages, appendix="message")
+        if self.project_control.logger.is_logging():
+            self.project_control.logger.write_messages(messages, tokens_messages, appendix="message")
 
         max_tokens = max_tokens - tokens_messages
 
@@ -75,18 +67,18 @@ class OpenAIConnection:
             messages=messages
         )
 
-        self.token_count += response.usage.total_tokens
+        self.project_control.token_count += response.usage.total_tokens
 
         response = {"role": response.choices[0].message.role,
                     "content": response.choices[0].message.content}
 
-        if verbose:
+        if self.project_control.verbose:
             print('----------ANSWER-----------')
             self.print_messages([response])
             print('----------END ANSWER-----------')
 
-        if self.logger.is_logging():
-            self.logger.write_messages([response], tokens_messages, appendix="answer")
+        if self.project_control.logger.is_logging():
+            self.project_control.logger.write_messages([response], tokens_messages, appendix="answer")
 
         return response
 
@@ -100,4 +92,4 @@ class OpenAIConnection:
             print("\033[0m", end="")
     
     def get_token_count(self):
-        return self.token_count
+        return self.project_control.token_count

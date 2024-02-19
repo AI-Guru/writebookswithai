@@ -1,0 +1,20 @@
+{
+    "Creating Plot": {
+        "head": {
+            "head_sys_message": "lc_write_plot_system_message",
+            "head_message": "lc_write_plot_prompt"
+        },
+        "refining": {
+            "iterations": 3,
+            "review_sys_message": "lc_write_plot_system_message",
+            "rewrite_sys_message": "lc_write_plot_system_message",
+            "review_message": "lc_review_plot",
+            "rewrite_message": "lc_rewrite_plot"
+        },
+        "progress_keys": [
+            "draft",
+            "review",
+            "rewrite"
+        ]
+    }
+}
