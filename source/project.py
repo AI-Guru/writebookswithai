@@ -67,7 +67,7 @@ class Project():
         # Check status of project
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
-            self.set_current_status("Project initialized", "Completed")
+            self.set_current_status("Project initialized", True)
         else:
             try:
                 self.status = self.read_json(self.status_file_path)
@@ -76,7 +76,7 @@ class Project():
                                         "Cannot retrieve project status. Please reset project.\n"
                                         f"File not found: {self.status_file_path}")from exc
 
-    def set_current_status(self, current_step: str, current_step_status: str):
+    def set_current_status(self, current_step: str, step_completed: bool = False):
         """ Set the current status of the project.
 
         Args:
@@ -91,6 +91,8 @@ class Project():
                     f'{current_status["Step"]}: {current_status["Status"]}')
 
         # Set new current status
+        current_step_status = "Completed" if step_completed else "Started"
+            
         self.status["Current status"] = {
             "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Step": current_step,

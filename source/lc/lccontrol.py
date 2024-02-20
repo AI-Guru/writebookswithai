@@ -27,7 +27,6 @@ class LCControl():
         """
         self.project_control = project_control
 
-        
         if gpt_model:
             self.gpt = ChatOpenAI(openai_api_key=self.project_control.api_key, model=gpt_model)
 

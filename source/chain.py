@@ -1,4 +1,3 @@
-from source.project import Project
 
 class ChainExecutor:
 
