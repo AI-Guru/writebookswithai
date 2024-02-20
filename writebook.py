@@ -115,7 +115,7 @@ def writebook(book_path: str,
         # Add the chain elements.
         chain_executor = ChainExecutor(model_connection, book_project)
         chain_executor.add_element(LCChainStep("Creating Plot"))
-        #chain_executor.add_element(LCChainStep("Refining Plot"))
+        chain_executor.add_element(LCChainStep("Refining Plot"))
 
     # Run the chain.
     chain_executor.run()

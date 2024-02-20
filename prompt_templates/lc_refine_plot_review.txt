@@ -1,0 +1,18 @@
+Your task is to suggest improvements to the general plot of a book. The general description of the book is:
+
+"""
+{book_description}
+"""
+
+The current draft of the plot is
+"""
+{draft}
+"""
+
+Make at least 6 suggestions to improve the draft. 
+The plot should not have (1) Plot holes, (2) clichés, (3) illogical and inconsistent story elements, (4) commonly used story elements.
+You are not allowed to make suggestions that drop the main plotline. Do not suggest addition of lore.
+Focus on the plot only. Do not suggest changes to the background, motivation and depth of characters or locations.
+Ignore: (1) That the plot uses placeholders for characters. (2) That the plot uses placeholders for locations. (3) That locations and characters are not detailed and might lack depth.
+
+List your answers in a numbered list. 
